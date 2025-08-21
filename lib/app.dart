@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -9,8 +9,6 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
-  bool _isShow = false;
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -24,39 +22,18 @@ class _MainAppState extends State<MainApp> {
               const Text('Welcome to Screenshot Detector!'),
               IconButton(
                 icon: const Icon(Icons.menu),
-                onPressed: () => {
-                  setState(() {
-                    _isShow = !_isShow;
-                  }),
+                onPressed: () async {
+                  if (await FlutterOverlayWindow.isActive()) {
+                    FlutterOverlayWindow.closeOverlay();
+                  } else {
+                    FlutterOverlayWindow.showOverlay(
+                      height: 80,
+                      width: 300,
+                      startPosition: OverlayPosition(0, 200),
+                    );
+                  }
                 },
               ),
-              // If true then display the container
-              _isShow
-                  ? Container(
-                      constraints: BoxConstraints.tight(Size(144, 40)),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
-                        color: Colors.black.withValues(alpha: 0.2),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.save),
-                            onPressed: () => {},
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () => {},
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.share),
-                            onPressed: () => {},
-                          ),
-                        ],
-                      ),
-                    )
-                  : Text("Click on the burger menu"),
             ],
           ),
         ),
