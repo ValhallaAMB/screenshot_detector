@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 class MainApp extends StatefulWidget {
@@ -15,6 +16,25 @@ class _MainAppState extends State<MainApp> {
   File? latestScreenshot;
   String? lastSeenId;
   bool isListening = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _requestPermissions();
+  }
+
+  Future<void> _requestPermissions() async {
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.photos,
+      // Permission.storage,
+      Permission.manageExternalStorage,
+      Permission.systemAlertWindow,
+    ].request();
+
+    if (!statuses.values.every((status) => status.isGranted)) {
+      openAppSettings();
+    }
+  }
 
   void _startListening() {
     // Poll every 2s for new screenshots
