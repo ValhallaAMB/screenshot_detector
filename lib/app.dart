@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:photo_manager/photo_manager.dart';
-import 'package:workmanager/workmanager.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -35,7 +34,7 @@ class _MainAppState extends State<MainApp> {
     // Find "Screenshots" album
     final screenshotsAlbum = albums.firstWhere(
       (a) => a.name.toLowerCase().contains("screenshot"),
-      orElse: () => albums.first,
+      orElse: () => AssetPathEntity(id: '', name: ''),
     );
 
     final recent = await screenshotsAlbum.getAssetListPaged(page: 0, size: 1);
@@ -50,19 +49,23 @@ class _MainAppState extends State<MainApp> {
             lastSeenId = latest.id;
           });
           // Overlay
-          if (await FlutterOverlayWindow.isActive()) {
-            FlutterOverlayWindow.closeOverlay();
-          } else {
-            // share a JSON-encodable value (the file path) instead of a File object
-            latestScreenshot != null
-                ? FlutterOverlayWindow.shareData(latestScreenshot!.path)
-                : FlutterOverlayWindow.shareData(null);
-            FlutterOverlayWindow.showOverlay(
-              alignment: OverlayAlignment.bottomCenter,
-            );
-          }
+          await _displayOverlay();
         }
       }
+    }
+  }
+
+  Future<void> _displayOverlay() async {
+    if (await FlutterOverlayWindow.isActive()) {
+      FlutterOverlayWindow.closeOverlay();
+    } else {
+      // share a JSON-encodable value (the file path) instead of a File object
+      latestScreenshot != null
+          ? FlutterOverlayWindow.shareData(latestScreenshot!.path)
+          : FlutterOverlayWindow.shareData(null);
+      FlutterOverlayWindow.showOverlay(
+        alignment: OverlayAlignment.bottomCenter,
+      );
     }
   }
 
@@ -97,24 +100,7 @@ class _MainAppState extends State<MainApp> {
               ElevatedButton(
                 child: const Text('Toggle Overlay'),
                 onPressed: () async {
-                  String uniqueId = DateTime.now().toIso8601String();
-                  Workmanager().registerPeriodicTask(
-                    uniqueId,
-                    "printInfo",
-                    frequency: Duration(seconds: 2),
-                  );
-
-                  if (await FlutterOverlayWindow.isActive()) {
-                    FlutterOverlayWindow.closeOverlay();
-                  } else {
-                    // share a JSON-encodable value (the file path) instead of a File object
-                    latestScreenshot != null
-                        ? FlutterOverlayWindow.shareData(latestScreenshot!.path)
-                        : FlutterOverlayWindow.shareData(null);
-                    FlutterOverlayWindow.showOverlay(
-                      alignment: OverlayAlignment.bottomCenter,
-                    );
-                  }
+                  await _displayOverlay();
                 },
               ),
             ],
