@@ -1,9 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:screenshot_detector/services/foreground_services.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -13,120 +14,125 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
-  File? latestScreenshot;
-  String? lastSeenId;
   bool isListening = false;
+
+  // Handle incoming data from the foreground service
+  void _onReceiveTaskData(Object data) {
+    if (data is Map<String, dynamic>) {
+      debugPrint("Data from Foreground: $data");
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _requestPermissions();
+    FlutterForegroundTask.addTaskDataCallback(_onReceiveTaskData);
+
+    // Request permissions and initialize service
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _requestPermissions();
+      await _initService();
+    });
   }
 
-  Future<void> _requestPermissions() async {
-    Map<Permission, PermissionStatus> statuses = await [
-      Permission.photos,
-      // Permission.storage,
-      Permission.manageExternalStorage,
-      Permission.systemAlertWindow,
-    ].request();
-
-    if (!statuses.values.every((status) => status.isGranted)) {
-      openAppSettings();
-    }
-  }
-
-  void _startListening() {
-    // Poll every 2s for new screenshots
-    if (isListening) {
-      Future.delayed(Duration(seconds: 2), () async {
-        await _checkForNewScreenshot();
-        if (mounted) _startListening();
-      });
-    }
-  }
-
-  Future<void> _checkForNewScreenshot() async {
-    final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
-      type: RequestType.image,
-    );
-
-    // Find "Screenshots" album
-    final screenshotsAlbum = albums.firstWhere(
-      (a) => a.name.toLowerCase().contains("screenshot"),
-      orElse: () => AssetPathEntity(id: '', name: ''),
-    );
-
-    final recent = await screenshotsAlbum.getAssetListPaged(page: 0, size: 1);
-
-    if (recent.isNotEmpty) {
-      final latest = recent.first;
-      if (latest.id != lastSeenId) {
-        final file = await latest.file;
-        if (file != null) {
-          setState(() {
-            latestScreenshot = file;
-            lastSeenId = latest.id;
-          });
-          // Overlay
-          await _displayOverlay();
-        }
-      }
-    }
-  }
-
-  Future<void> _displayOverlay() async {
-    if (await FlutterOverlayWindow.isActive()) {
-      FlutterOverlayWindow.closeOverlay();
-    } else {
-      // share a JSON-encodable value (the file path) instead of a File object
-      latestScreenshot != null
-          ? FlutterOverlayWindow.shareData(latestScreenshot!.path)
-          : FlutterOverlayWindow.shareData(null);
-      FlutterOverlayWindow.showOverlay(
-        alignment: OverlayAlignment.bottomCenter,
-      );
-    }
+  @override
+  void dispose() {
+    FlutterForegroundTask.removeTaskDataCallback(_onReceiveTaskData);
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Screenshot Detector',
       home: Scaffold(
         appBar: AppBar(title: const Text('Screenshot Detector')),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                'Welcome to Screenshot Detector!',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              Text(
+                "Click the button to start listening for screenshots",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                textAlign: TextAlign.center,
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () {
-                  // Start listening for new screenshots
-                  setState(() {
-                    isListening = !isListening;
-                  });
+                  setState(() => isListening = !isListening);
                   if (isListening) {
-                    _startListening();
+                    _startForegroundTask();
+                  } else {
+                    _stopForegroundTask();
                   }
                 },
                 child: Text(isListening ? 'Stop Listening' : 'Start Listening'),
-              ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                child: const Text('Toggle Overlay'),
-                onPressed: () async {
-                  await _displayOverlay();
-                },
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  // Request necessary permissions
+  Future<void> _requestPermissions() async {
+    // Notifications (Android 13+ runtime)
+    final np = await FlutterForegroundTask.checkNotificationPermission();
+    if (np != NotificationPermission.granted) {
+      await FlutterForegroundTask.requestNotificationPermission();
+    }
+
+    // Optional but recommended for long-running FG services on Android 12+:
+    if (Platform.isAndroid &&
+        !await FlutterForegroundTask.isIgnoringBatteryOptimizations) {
+      await FlutterForegroundTask.requestIgnoreBatteryOptimization();
+    }
+
+    // Media (screenshots) – PhotoManager handles runtime prompts.
+    await PhotoManager.requestPermissionExtend();
+
+    // Overlay permission (for your floating bar)
+    if (!await FlutterOverlayWindow.isPermissionGranted()) {
+      await FlutterOverlayWindow.requestPermission();
+    }
+  }
+
+  // Initialize foreground service
+  Future<void> _initService() async {
+    FlutterForegroundTask.init(
+      androidNotificationOptions: AndroidNotificationOptions(
+        channelId: 'foreground_service',
+        channelName: 'Screenshot Detector',
+        channelDescription: 'Detecting screenshots in background.',
+        onlyAlertOnce: true,
+      ),
+      iosNotificationOptions: const IOSNotificationOptions(
+        showNotification: false,
+        playSound: false,
+      ),
+      foregroundTaskOptions: ForegroundTaskOptions(
+        eventAction: ForegroundTaskEventAction.repeat(
+          3000, // Check every 3 seconds
+        ),
+      ),
+    );
+  }
+
+  // Start foreground task
+  Future<ServiceRequestResult> _startForegroundTask() async {
+    if (await FlutterForegroundTask.isRunningService) {
+      return FlutterForegroundTask.restartService();
+    }
+    return FlutterForegroundTask.startService(
+      serviceId: 256,
+      notificationTitle: 'Screenshot Detector Running',
+      notificationText: 'Listening for screenshots…',
+      callback: startCallback,
+    );
+  }
+
+  // Stop foreground task
+  Future<ServiceRequestResult> _stopForegroundTask() async {
+    return FlutterForegroundTask.stopService();
   }
 }

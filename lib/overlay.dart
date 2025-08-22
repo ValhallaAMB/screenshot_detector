@@ -17,6 +17,7 @@ class _OverlayMainState extends State<OverlayMain> {
   @override
   void initState() {
     super.initState();
+    // Listen for overlay events (i.e. screenshot captured)
     FlutterOverlayWindow.overlayListener.listen((data) {
       debugPrint('Overlay event data: $data');
       if (data is String && data.isNotEmpty) {
@@ -76,6 +77,8 @@ class _OverlayMainState extends State<OverlayMain> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 mainAxisSize: MainAxisSize.min,
+
+                // Clicking of the buttons will close the overlay
                 children: [
                   _buildActionButton(
                     icon: Icons.crop,
