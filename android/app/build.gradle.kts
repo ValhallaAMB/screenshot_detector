@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.screenshot_detector"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36 // flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
     compileOptions {

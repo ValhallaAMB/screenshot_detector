@@ -8,9 +8,16 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Initialize communication port for foreground service
   FlutterForegroundTask.initCommunicationPort();
-  
+
   runApp(const MainApp());
 }
+
+// overlay entry point
+// @pragma("vm:entry-point")
+// void overlayMain() {
+//   WidgetsFlutterBinding.ensureInitialized();
+//   runApp(const OverlayMain());
+// }
 
 // overlay entry point
 @pragma("vm:entry-point")

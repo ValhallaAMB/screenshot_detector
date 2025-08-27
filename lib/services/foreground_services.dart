@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+// import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:system_alert_window/system_alert_window.dart';
 
 // Foreground service entry point
 @pragma('vm:entry-point')
@@ -33,12 +34,17 @@ class MyTaskHandler extends TaskHandler {
           debugPrint('New screenshot detected: ${file.path}');
 
           // Show overlay with screenshot
-          if (!await FlutterOverlayWindow.isActive()) {
-            FlutterOverlayWindow.shareData(file.path);
-            FlutterOverlayWindow.showOverlay(
-              alignment: OverlayAlignment.center,
-            );
-          }
+          // if (!await FlutterOverlayWindow.isActive()) {
+          //   FlutterOverlayWindow.shareData(file.path);
+          //   FlutterOverlayWindow.showOverlay(
+          //     alignment: OverlayAlignment.center,
+          //   );
+          // }
+
+          SystemAlertWindow.showSystemWindow(
+            prefMode: SystemWindowPrefMode.OVERLAY,
+          );
+
           // Send data back to main app
           FlutterForegroundTask.sendDataToMain({"screenshotPath": file.path});
         }

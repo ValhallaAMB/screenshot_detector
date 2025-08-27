@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+import 'package:system_alert_window/system_alert_window.dart';
 
 class OverlayMain extends StatefulWidget {
   const OverlayMain({super.key});
@@ -18,7 +19,17 @@ class _OverlayMainState extends State<OverlayMain> {
   void initState() {
     super.initState();
     // Listen for overlay events (i.e. screenshot captured)
-    FlutterOverlayWindow.overlayListener.listen((data) {
+    // FlutterOverlayWindow.overlayListener.listen((data) {
+    //   debugPrint('Overlay event data: $data');
+    //   if (data is String && data.isNotEmpty) {
+    //     setState(() {
+    //       screenshotPath = data;
+    //       latestScreenshot = File(data);
+    //     });
+    //   }
+    // });
+
+    SystemAlertWindow.overlayListener.listen((data) {
       debugPrint('Overlay event data: $data');
       if (data is String && data.isNotEmpty) {
         setState(() {
@@ -84,21 +95,30 @@ class _OverlayMainState extends State<OverlayMain> {
                     icon: Icons.crop,
                     onPressed: () async {
                       debugPrint('Crop pressed');
-                      await FlutterOverlayWindow.closeOverlay();
+                      // await FlutterOverlayWindow.closeOverlay();
+                      await SystemAlertWindow.closeSystemWindow(
+                        prefMode: SystemWindowPrefMode.OVERLAY,
+                      );
                     },
                   ),
                   _buildActionButton(
                     icon: Icons.save,
                     onPressed: () async {
                       debugPrint('Save pressed');
-                      await FlutterOverlayWindow.closeOverlay();
+                      // await FlutterOverlayWindow.closeOverlay();
+                      await SystemAlertWindow.closeSystemWindow(
+                        prefMode: SystemWindowPrefMode.OVERLAY,
+                      );
                     },
                   ),
                   _buildActionButton(
                     icon: Icons.delete,
                     onPressed: () async {
                       debugPrint('Delete pressed');
-                      await FlutterOverlayWindow.closeOverlay();
+                      // await FlutterOverlayWindow.closeOverlay();
+                      await SystemAlertWindow.closeSystemWindow(
+                        prefMode: SystemWindowPrefMode.OVERLAY,
+                      );
                     },
                   ),
                 ],

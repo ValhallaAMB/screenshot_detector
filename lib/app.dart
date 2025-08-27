@@ -5,6 +5,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:screenshot_detector/services/foreground_services.dart';
+import 'package:system_alert_window/system_alert_window.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -92,9 +93,11 @@ class _MainAppState extends State<MainApp> {
     await PhotoManager.requestPermissionExtend();
 
     // Overlay permission (for your floating bar)
-    if (!await FlutterOverlayWindow.isPermissionGranted()) {
-      await FlutterOverlayWindow.requestPermission();
-    }
+    // if (!await FlutterOverlayWindow.isPermissionGranted()) {
+    //   await FlutterOverlayWindow.requestPermission();
+    // }
+
+    SystemAlertWindow.requestPermissions;
   }
 
   // Initialize foreground service
