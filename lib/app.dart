@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:screenshot_detector/services/foreground_services.dart';
 
@@ -91,9 +91,10 @@ class _MainAppState extends State<MainApp> {
     // Media (screenshots) – PhotoManager handles runtime prompts.
     await PhotoManager.requestPermissionExtend();
 
-    // Overlay permission (for your floating bar)
-    if (!await FlutterOverlayWindow.isPermissionGranted()) {
-      await FlutterOverlayWindow.requestPermission();
+    // Permission systemAlertWindow for the overlay
+    // Permission was used instead of FlutterOverlayWindow permissions because it doesn't work android versions lower than 10
+    if (!await Permission.systemAlertWindow.status.isGranted) {
+      await Permission.systemAlertWindow.request();
     }
   }
 
@@ -112,7 +113,7 @@ class _MainAppState extends State<MainApp> {
       ),
       foregroundTaskOptions: ForegroundTaskOptions(
         eventAction: ForegroundTaskEventAction.repeat(
-          3000, // Check every 3 seconds
+          2000, // Check every 2 seconds
         ),
       ),
     );
