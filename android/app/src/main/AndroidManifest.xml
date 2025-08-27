@@ -1,11 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Photo Manager -->
     <!-- Read storage permission for Android 12 and lower -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <!-- Granular media permissions for Android 13 and newer -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <!-- Permissions options for the `manage external storage` group -->
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+
     <!-- Overlay permissions -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -14,7 +14,7 @@
     <!-- Declare the specific FG service types you need (Android 14+) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
-    <!-- Android 13+ notification runtime permission -->
+    <!-- Notification runtime permission -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
@@ -30,6 +30,7 @@
                 android:value="explanation_for_special_use" />
         </service>
 
+        <!-- Foreground service -->
         <service
             android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
             android:foregroundServiceType="dataSync|specialUse"
